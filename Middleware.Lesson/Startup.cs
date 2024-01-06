@@ -1,11 +1,16 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using Middleware.Lesson.DB;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -24,6 +29,26 @@ namespace Middleware.Lesson
         public void ConfigureServices(IServiceCollection services)
         {
 
+            // Configura il database in-memory
+            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(databaseName: "UserDatabase"));
+
+            // Configura l'autenticazione JWT
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey")), // Imposta la chiave segreta
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
+            });
+
             services.AddControllers();
         }
 
@@ -37,85 +62,17 @@ namespace Middleware.Lesson
 
             app.UseRouting();
 
-            app.Map("/private", branch =>
-            {
-                ///branch.UseMiddleware<MyMiddleware>();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
 
-
-                branch.Use(async (context, next) =>
-                {
-                    await context.Response.WriteAsync($"Private Branch - Middleware -  Forward Request\n");
-                    await next(context);
-                    await context.Response.WriteAsync($"Private Branch - Middleware -  Return Reqeust\n");
-
-                });
-
-                //Terminal  middleware
-                branch.Run(async (context) =>
-                {
-                    await context.Response.WriteAsync($"Private Branch - Final middleware\n");
-                });
-
-            });
-
-
-
-            app.Use(async (context, next) =>
-            {
-
-                await context.Response.WriteAsync("Primo Middleware OK - sending to the next Middleware\n");
-                await next();
-                await context.Response.WriteAsync("Primo Middleware OK - Bye Bye \n");
-                await context.Response.WriteAsync($"Status Code: {context.Response.StatusCode}\n");
-
-
-            });
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Method == HttpMethods.Get
-                // && context.Request.Query["custom"] == "false"
-                )
-                {
-                    // await context.Response.WriteAsync("False Middleware \n");
-                }
-                else
-                {
-
-                }
-                await context.Response.WriteAsync("Secondo Middleware OK - sending to the next Middleware\n");
-                await next();
-
-                await context.Response.WriteAsync("Secondo Middleware OK - Bye Bye \n");
-                await context.Response.WriteAsync($"Status Code: {context.Response.StatusCode}\n");
-
-
-            });
-
-            // in questo flusso, una richiesta in entrata prima passa attraverso UseRouting,
-            // che determina quale endpoint è appropriato. Poi, dopo aver attraversato eventuali altri middleware,
-            // giunge a UseEndpoints, che esegue l'endpoint corrispondente. Questo flusso permette una gestione
-            // chiara e modulare delle richieste in ASP.NET Core.
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Response from EndPoint !\n");
-                });
-                //endpoints.MapGet("/private", async context =>
-                //{
-                //    await context.Response.WriteAsync("Response from private EndPoint !\n");
-                //});
-
+                endpoints.MapControllers();
             });
 
-            // app.UseAuthorization();
 
-            //app.UseEndpoints(endpoints =>
-            //{
-            //    endpoints.MapControllers();
-            //});
         }
     }
     public class MyMiddleware
