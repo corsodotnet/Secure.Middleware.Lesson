@@ -1,73 +1,75 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MyFakeClient
 {
-    internal class Program
+    class Program
     {
+        private static readonly HttpClient client = new HttpClient();
+        private static string baseAddress = "https://localhost:5001/"; // Assicurati che corrisponda all'URL del tuo server
+
         static async Task Main(string[] args)
         {
-            // URL dell'endpoint del server dove inviare la richiesta POST
+            Console.WriteLine("Starting client...");
 
-            await SendGet();
+            // Registrazione (se necessario)
+            await RegisterUser("testuser", "testpassword");
 
-            // Crea un'istanza di HttpClient
+            // Login
+            await LoginUser("testuser", "testpassword");
 
+            // Effettua una richiesta autenticata
+            await GetSecureData();
         }
-        public static async Task SendGet()
+
+        private static async Task RegisterUser(string username, string password)
         {
-            using (HttpClient client = new HttpClient())
+            var url = baseAddress + "api/auth/register";
+            var user = new { Username = username, Password = password };
+            var json = JsonConvert.SerializeObject(user);
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(url, data);
+            var result = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Registration: " + result);
+        }
+
+        private static async Task LoginUser(string username, string password)
+        {
+            var url = baseAddress + "api/auth/login";
+            var user = new { Username = username, Password = password };
+            var json = JsonConvert.SerializeObject(user);
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(url, data);
+            var result = await response.Content.ReadAsStringAsync();
+
+            // Salva il cookie per le successive richieste
+            if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
             {
-                client.BaseAddress = new Uri("https://localhost:5001");
-                // Crea l'oggetto con le credenziali
-
-                try
-                {
-                    // Invia la richiesta POST
-                    HttpResponseMessage response = await client.GetAsync("/");
-
-                    // Leggi la risposta
-                    string result = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Risposta ricevuta: " + result);
-                }
-                catch (HttpRequestException e)
-                {
-                    Console.WriteLine("Errore nella richiesta: " + e.Message);
-                }
+                client.DefaultRequestHeaders.Add("Cookie", string.Join(";", cookies));
             }
+
+            Console.WriteLine("Login: " + result);
         }
-        public async void SendPost(string url)
+
+        private static async Task GetSecureData()
         {
-            using (HttpClient client = new HttpClient())
+            var url = baseAddress + "WeatherForecast"; // Modifica con il percorso corretto
+            var response = await client.GetAsync(url);
+            if (response.IsSuccessStatusCode)
             {
-                // Crea l'oggetto con le credenziali
-                var credentials = new
-                {
-                    Username = "bruno", // Sostituire con l'username reale
-                    Password = "myPassword"  // Sostituire con la password reale
-                };
-
-                // Serializza le credenziali in una stringa JSON
-                string json = JsonSerializer.Serialize(credentials);
-                StringContent data = new StringContent(json, Encoding.UTF8, "application/json");
-
-                try
-                {
-                    // Invia la richiesta POST
-                    HttpResponseMessage response = await client.PostAsync(url, data);
-
-                    // Leggi la risposta
-                    string result = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Risposta ricevuta: " + result);
-                }
-                catch (HttpRequestException e)
-                {
-                    Console.WriteLine("Errore nella richiesta: " + e.Message);
-                }
+                var data = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("WeatherForecast Data: " + data);
+            }
+            else
+            {
+                Console.WriteLine("Error accessing WeatherForecast data. Status Code: " + response.StatusCode);
             }
         }
     }
+
 }

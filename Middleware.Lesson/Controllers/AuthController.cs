@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -52,50 +53,39 @@ namespace Middleware.Lesson.Models
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDto userDto)
+        public async Task<ActionResult<string>> Login([FromBody] UserDto request)
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
+            //var user = await _context.Users
+            //    .FirstOrDefaultAsync(u => u.Username == userDto.Username);
 
-            if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
+            //if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
+            //{
+            //    return Unauthorized("Username or password is incorrect.");
+            //}
+
+            //string token = GenerateJwtToken(user);
+            //return Ok(token);  
+            var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Username == request.Username);
+
+            if (user == null || !VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
             {
                 return Unauthorized("Username or password is incorrect.");
             }
 
-            string token = GenerateJwtToken(user);
-            return Ok(token);
-        }
-        [HttpGet("google-login")]
-        public IActionResult GoogleLogin()
+            var claims = new List<Claim>
         {
-            var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback") };
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            new Claim(ClaimTypes.Name, user.Username)
+        };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity));
+
+            return Ok("User logged in successfully.");
         }
-        [HttpGet("google-callback")]
-        public async Task<IActionResult> GoogleCallback()
-        {
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            if (!result.Succeeded)
-                return BadRequest(); // Gestisci l'errore
-
-            // Estrai le informazioni dal risultato
-            var googleId = result.Principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
-
-            // Cerca l'utente nel DB o registrane uno nuovo
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId);
-            if (user == null)
-            {
-                user = new User { GoogleId = googleId, Email = email };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-            }
-
-            // Genera e restituisci un token JWT per l'utente
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
-        }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
