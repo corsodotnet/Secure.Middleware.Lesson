@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -62,6 +64,37 @@ namespace Middleware.Lesson.Models
 
             string token = GenerateJwtToken(user);
             return Ok(token);
+        }
+        [HttpGet("google-login")]
+        public IActionResult GoogleLogin()
+        {
+            var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback") };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+
+            if (!result.Succeeded)
+                return BadRequest(); // Gestisci l'errore
+
+            // Estrai le informazioni dal risultato
+            var googleId = result.Principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var email = result.Principal.FindFirst(ClaimTypes.Email)?.Value;
+
+            // Cerca l'utente nel DB o registrane uno nuovo
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId);
+            if (user == null)
+            {
+                user = new User { GoogleId = googleId, Email = email };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+
+            // Genera e restituisci un token JWT per l'utente
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
