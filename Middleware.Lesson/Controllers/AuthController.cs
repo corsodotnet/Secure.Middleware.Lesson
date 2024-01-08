@@ -1,12 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -56,16 +53,7 @@ namespace Middleware.Lesson.Models
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login([FromBody] UserDto request)
         {
-            //var user = await _context.Users
-            //    .FirstOrDefaultAsync(u => u.Username == userDto.Username);
 
-            //if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
-            //{
-            //    return Unauthorized("Username or password is incorrect.");
-            //}
-
-            //string token = GenerateJwtToken(user);
-            //return Ok(token);  
             var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Username == request.Username);
 
@@ -79,26 +67,13 @@ namespace Middleware.Lesson.Models
             // Imposta il token in un cookie sicuro
             var cookieOptions = new CookieOptions
             {
+                //Un cookie HttpOnly è un tipo di cookie che è inaccessibile tramite script lato client, come JavaScript. Questo significa che anche se un attaccante dovesse riuscire a eseguire uno script cross-site (XSS) sulla tua pagina, non sarebbe in grado di leggere il cookie HttpOnly.
                 HttpOnly = true,
-                Secure = true // Assicurati di usare HTTPS
+                Secure = true //Un cookie Secure è un cookie che viene trasmesso solo su connessioni criptate HTTPS. Se un cookie ha l'attributo Secure, non verrà inviato dal client se la connessione non è HTTPS.
             };
             Response.Cookies.Append("AuthToken", token, cookieOptions);
 
             return Ok(new { Token = token });
-
-
-            // Informaizioni da inseri nella Session 
-            var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.Username)
-                };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity));
-
-            return Ok("User logged in successfully.");
         }
 
 
@@ -118,28 +93,11 @@ namespace Middleware.Lesson.Models
             return computedHash.SequenceEqual(storedHash); // Compare the computed hash with the stored hash
         }
 
-        //private string GenerateJwtToken(string username)
-        //{
-        //    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey"));
-        //    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        //    var claims = new[]
-        //    {
-        //    new Claim(JwtRegisteredClaimNames.Sub, username),
-        //    // Aggiungi altri claims necessari
-        //};
-
-        //    var token = new JwtSecurityToken(
-        //        // claims: claims, // Abilita questo se hai altri claims da aggiungere
-        //        expires: DateTime.Now.AddDays(1),
-        //        signingCredentials: credentials);
-
-        //    return new JwtSecurityTokenHandler().WriteToken(token);
-        //}
         private string GenerateJwtToken(string user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes("YourSecretKey"); // Retrieve the secret key securely
+            var key = Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey"); // Retrieve the secret key securely
             var tokenDescriptor = new SecurityTokenDescriptor
             {
 

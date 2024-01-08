@@ -1,19 +1,13 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Middleware.Lesson.DB;
-using System.IO;
-using System.Net;
 using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Middleware.Lesson
 {
@@ -39,14 +33,14 @@ namespace Middleware.Lesson
             //Quando lo configuri, puoi specificare diversi "schemi" di autenticazione che l'applicazione utilizzerà per gestire
             //l'identità degli utenti. I parametri chiave all'interno del metodo AddAuthentication includono:
 
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            //  services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
 
-           .AddCookie(options =>
-           {
-               options.LoginPath = "/login"; // Imposta il tuo path di login
-               options.LogoutPath = "/logout"; // Imposta il tuo path di logout
-               options.Cookie.HttpOnly = true;  // Per la sicurezza
-           });
+            //.AddCookie(options =>
+            //{
+            //    options.LoginPath = "/login"; // Imposta il tuo path di login
+            //    options.LogoutPath = "/logout"; // Imposta il tuo path di logout
+            //    options.Cookie.HttpOnly = true;  // Per la sicurezza
+            //});
 
             services.AddAuthentication(options =>
             {
@@ -58,7 +52,7 @@ namespace Middleware.Lesson
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")), // Usa una chiave segreta adeguata
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("CreateSomeRandomStringForSecretKey")), // Usa una chiave segreta adeguata
                 ValidateIssuer = false,
                 ValidateAudience = false
             };
@@ -77,7 +71,15 @@ namespace Middleware.Lesson
             }
 
             app.UseRouting();
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Cookies.TryGetValue("AuthToken", out var token))
+                {
+                    context.Request.Headers.Add("Authorization", "Bearer " + token);
+                }
 
+                await next.Invoke();
+            });
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -93,62 +95,7 @@ namespace Middleware.Lesson
     }
 
 }
-public class AuthenticationMiddleware
-{
-    private readonly RequestDelegate _next;
 
-    public AuthenticationMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-    public class Credentials
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
-    public async Task InvokeAsync(HttpContext context)
-    {
-        // Leggi il body della richiesta
-        string body;
-        context.Request.EnableBuffering(); // Abilita la lettura del body più volte
-        using (var reader = new StreamReader(context.Request.Body))
-        {
-            body = await reader.ReadToEndAsync();
-            context.Request.Body.Position = 0; // Resetta la posizione del body per le letture successive
-        }
-
-        // Deserializza il body nella classe Credentials
-        Credentials credentials = null;
-        try
-        {
-            credentials = JsonSerializer.Deserialize<Credentials>(body);
-        }
-        catch (JsonException exx) // Gestisci errori di deserializzazione
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            await context.Response.WriteAsync("Body della richiesta non valido.");
-            return;
-        }
-
-        // Verifica le credenziali
-        if (credentials != null && IsValidUser(credentials))
-        {
-            await _next(context); // Continua con la pipeline se l'utente è valido  
-            await context.Response.WriteAsync("Accesso Concesso!");
-        }
-        else
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-            await context.Response.WriteAsync("Accesso Negato");
-        }
-    }
-
-    private bool IsValidUser(Credentials credentials)
-    {
-        // Implementa la logica di verifica dell'utente
-        return credentials.Username == "bruno" && credentials.Password == "myPassword";
-    }
-}
 
 
 
