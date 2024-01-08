@@ -8,29 +8,38 @@ namespace MyFakeClient
 {
     internal class Program
     {
+        private static string _token; // Variabile per salvare il token
+
         static async Task Main(string[] args)
         {
-            // URL dell'endpoint del server dove inviare la richiesta POST
+            // Registrazione
+            await SendPost("https://localhost:5001/api/auth/register", new
+            {
+                Username = "nuovoUtente",
+                Password = "nuovaPassword"
+            });
 
-            await SendGet();
-
-            // Crea un'istanza di HttpClient
-
+            // Utilizzo del token per una richiesta a un endpoint protetto
+            await SendGetWithToken("https://localhost:5001/WeatherForecast");
         }
-        public static async Task SendGet()
+
+        public static async Task SendPost(string url, object credentials)
         {
             using (HttpClient client = new HttpClient())
             {
-                client.BaseAddress = new Uri("https://localhost:5001");
-                // Crea l'oggetto con le credenziali
+                string json = JsonSerializer.Serialize(credentials);
+                StringContent data = new StringContent(json, Encoding.UTF8, "application/json");
 
                 try
                 {
-                    // Invia la richiesta POST
-                    HttpResponseMessage response = await client.GetAsync("/");
-
-                    // Leggi la risposta
+                    HttpResponseMessage response = await client.PostAsync(url, data);
                     string result = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        _token = result; // Salva il token
+                    }
+
                     Console.WriteLine("Risposta ricevuta: " + result);
                 }
                 catch (HttpRequestException e)
@@ -39,27 +48,17 @@ namespace MyFakeClient
                 }
             }
         }
-        public async void SendPost(string url)
+
+        public static async Task SendGetWithToken(string url)
         {
+            Console.WriteLine(url);
+            Console.WriteLine(_token);
             using (HttpClient client = new HttpClient())
             {
-                // Crea l'oggetto con le credenziali
-                var credentials = new
-                {
-                    Username = "bruno", // Sostituire con l'username reale
-                    Password = "myPassword"  // Sostituire con la password reale
-                };
-
-                // Serializza le credenziali in una stringa JSON
-                string json = JsonSerializer.Serialize(credentials);
-                StringContent data = new StringContent(json, Encoding.UTF8, "application/json");
-
                 try
                 {
-                    // Invia la richiesta POST
-                    HttpResponseMessage response = await client.PostAsync(url, data);
-
-                    // Leggi la risposta
+                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+                    HttpResponseMessage response = await client.GetAsync(url);
                     string result = await response.Content.ReadAsStringAsync();
                     Console.WriteLine("Risposta ricevuta: " + result);
                 }

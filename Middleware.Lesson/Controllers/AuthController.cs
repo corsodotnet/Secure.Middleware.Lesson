@@ -46,7 +46,8 @@ namespace Middleware.Lesson.Models
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok("User registered successfully.");
+            string token = GenerateJwtToken(user);
+            return Ok(token);
         }
 
         [HttpPost("login")]
