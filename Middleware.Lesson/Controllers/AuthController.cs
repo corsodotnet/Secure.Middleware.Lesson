@@ -86,6 +86,8 @@ namespace Middleware.Lesson.Models
             var key = Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey"); // Retrieve the secret key securely
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+
+                // Le informazini dell'utente
                 Subject = new ClaimsIdentity(new Claim[]
                 {
                     new Claim(ClaimTypes.Name, user.Id.ToString())
