@@ -118,23 +118,45 @@ namespace Middleware.Lesson.Models
             return computedHash.SequenceEqual(storedHash); // Compare the computed hash with the stored hash
         }
 
-        private string GenerateJwtToken(string username)
+        //private string GenerateJwtToken(string username)
+        //{
+        //    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey"));
+        //    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        //    var claims = new[]
+        //    {
+        //    new Claim(JwtRegisteredClaimNames.Sub, username),
+        //    // Aggiungi altri claims necessari
+        //};
+
+        //    var token = new JwtSecurityToken(
+        //        // claims: claims, // Abilita questo se hai altri claims da aggiungere
+        //        expires: DateTime.Now.AddDays(1),
+        //        signingCredentials: credentials);
+
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
+        private string GenerateJwtToken(string user)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey"));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes("YourSecretKey"); // Retrieve the secret key securely
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            // Aggiungi altri claims necessari
-        };
 
-            var token = new JwtSecurityToken(
-                // claims: claims, // Abilita questo se hai altri claims da aggiungere
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: credentials);
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, user.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                // SigningCredentials: Questa è una classe nel namespace Microsoft.IdentityModel.Tokens.Viene utilizzata per definire la chiave crittografica e l'algoritmo di sicurezza che saranno usati per generare la firma del JWT.
+                // SecurityAlgorithms.HmacSha512Signature: Questo specifica l'algoritmo utilizzato per generare la firma. HMAC SHA-512 è una funzione hash crittografica che garantisce l'integrità e l'autenticità del token. Utilizzare HMAC SHA-512 significa che la parte della firma del JWT viene generata utilizzando questo algoritmo, noto per la sua forza crittografica.
+                // SymmetricSecurityKey: Questa classe rappresenta una chiave di crittografia simmetrica. Nel tuo codice, viene istanziata con key, che dovrebbe essere un array di byte.Questa chiave viene utilizzata sia per firmare che per convalidare il token.È importante che questa chiave sia mantenuta sicura e non esposta o codificata in modo fisso nel tuo codice.Spesso viene conservata in un archivio di configurazione sicuro o nelle variabili di ambiente.
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
