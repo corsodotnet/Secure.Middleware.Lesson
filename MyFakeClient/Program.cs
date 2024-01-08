@@ -14,7 +14,16 @@ namespace MyFakeClient
         static async Task Main(string[] args)
         {
             Console.WriteLine("Starting client...");
+            try
+            {
+                await GetSecureData();
 
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
             // Registrazione (se necessario)
             await RegisterUser("testuser", "testpassword");
 
