@@ -52,16 +52,6 @@ namespace Middleware.Lesson.Models
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login([FromBody] UserDto request)
         {
-            //var user = await _context.Users
-            //    .FirstOrDefaultAsync(u => u.Username == userDto.Username);
-
-            //if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
-            //{
-            //    return Unauthorized("Username or password is incorrect.");
-            //}
-
-            //string token = GenerateJwtToken(user);
-            //return Ok(token);  
             var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Username == request.Username);
 
@@ -101,22 +91,6 @@ namespace Middleware.Lesson.Models
             return computedHash.SequenceEqual(storedHash); // Compare the computed hash with the stored hash
         }
 
-        //private string GenerateJwtToken(User user)
-        //{
-        //    var tokenHandler = new JwtSecurityTokenHandler();
-        //    var key = Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey"); // Retrieve the secret key securely
-        //    var tokenDescriptor = new SecurityTokenDescriptor
-        //    {
-        //        Subject = new ClaimsIdentity(new Claim[]
-        //        {
-        //            new Claim(ClaimTypes.Name, user.Id.ToString())
-        //        }),
-        //        Expires = DateTime.UtcNow.AddDays(7),
-        //        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
-        //    };
 
-        //    var token = tokenHandler.CreateToken(tokenDescriptor);
-        //    return tokenHandler.WriteToken(token);
-        //}
     }
 }

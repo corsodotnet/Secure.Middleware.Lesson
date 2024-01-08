@@ -32,11 +32,16 @@ namespace Middleware.Lesson
 
 
 
-            //In ASP.NET Core, il metodo services.AddAuthentication() configura il sistema di autenticazione dell'applicazione.
-            //Quando lo configuri, puoi specificare diversi "schemi" di autenticazione che l'applicazione utilizzerà per gestire
-            //l'identità degli utenti. I parametri chiave all'interno del metodo AddAuthentication includono:
+            //Cosa Significano Questi Schemi?
+            //   [CookieAuthenticationDefaults.AuthenticationScheme]: Questo schema si basa sull'uso dei cookie. 
+            //   Quando configuri DefaultAuthenticateScheme e DefaultSignInScheme con questo valore, stai dicendo
+            //   all'applicazione di utilizzare i cookie per mantenere la sessione dell'utente tra le richieste e per
+            //   autenticare l'utente su ciascuna richiesta. È comune nelle applicazioni web dove gli utenti tornano e
+            //   rimangono autenticati tra diverse sessioni del browser.
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+
+
            .AddCookie(options =>
            {
                options.LoginPath = "/login"; // Imposta il tuo path di login
