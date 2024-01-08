@@ -35,16 +35,27 @@ namespace Middleware.Lesson
             // Configura l'autenticazione JWT
             services.AddAuthentication(options =>
             {
+                //Questo imposta lo schema di autenticazione predefinito per l'applicazione. Assegnando stai dicendo all'applicazione di utilizzare l'autenticazione JWT come meccanismo di autenticazione principale. Questo significa che, quando una richiesta arriva al server, il middleware di autenticazione proverà a convalidare il token JWT incluso nell'intestazione della richiesta.
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                //Questo imposta lo schema predefinito per le sfide di autenticazione. Quando un'azione richiede autenticazione e non è presente alcun token valido o l'autenticazione fallisce, il middleware genera una "sfida".
+                //Impostando JwtBearerDefaults.AuthenticationScheme come schema di sfida predefinito, indichi che il middleware dovrà rispondere alle richieste non autenticate chiedendo un token JWT.
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    //Impostando questo valore su true, indichi che il middleware deve validare la chiave usata per firmare il token JWT in arrivo. Questo è un passaggio cruciale per garantire che il token sia stato emesso da una fonte attendibile e non sia stato manomesso.
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey")), // Imposta la chiave segreta
+
+                    //Qui si specifica la chiave utilizzata per la validazione della firma del token. Questa chiave deve corrispondere a quella usata per firmare il token. Nel tuo codice, viene creata una nuova 
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey")),
+
+                    //Impostando questo valore su false, si specifica che il middleware non deve validare l'emittente del token. In alcuni casi, potresti volerlo validare per assicurarti che il token provenga da una fonte attendibile.
                     ValidateIssuer = false,
+
+                    //Analogamente a ValidateIssuer, impostare questo valore su false indica che il middleware non deve validare l'audience (destinatario) del token. Anche questo può essere importante in scenari in cui devi assicurarti che il token sia destinato alla tua applicazione o a un particolare ascoltatore.
                     ValidateAudience = false
                 };
             });
