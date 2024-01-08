@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -6,9 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Middleware.Lesson.DB;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -37,6 +40,7 @@ namespace Middleware.Lesson
             //l'identità degli utenti. I parametri chiave all'interno del metodo AddAuthentication includono:
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+
            .AddCookie(options =>
            {
                options.LoginPath = "/login"; // Imposta il tuo path di login
@@ -44,6 +48,21 @@ namespace Middleware.Lesson
                options.Cookie.HttpOnly = true;  // Per la sicurezza
            });
 
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")), // Usa una chiave segreta adeguata
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+        });
 
 
             services.AddControllers();

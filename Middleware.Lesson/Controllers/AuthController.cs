@@ -1,12 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Middleware.Lesson.Models
@@ -70,6 +74,19 @@ namespace Middleware.Lesson.Models
                 return Unauthorized("Username or password is incorrect.");
             }
 
+            var token = GenerateJwtToken(request.Username); // Genera il token JWT
+
+            // Imposta il token in un cookie sicuro
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true // Assicurati di usare HTTPS
+            };
+            Response.Cookies.Append("AuthToken", token, cookieOptions);
+
+            return Ok(new { Token = token });
+
+
             // Informaizioni da inseri nella Session 
             var claims = new List<Claim>
                 {
@@ -101,22 +118,23 @@ namespace Middleware.Lesson.Models
             return computedHash.SequenceEqual(storedHash); // Compare the computed hash with the stored hash
         }
 
-        //private string GenerateJwtToken(User user)
-        //{
-        //    var tokenHandler = new JwtSecurityTokenHandler();
-        //    var key = Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey"); // Retrieve the secret key securely
-        //    var tokenDescriptor = new SecurityTokenDescriptor
-        //    {
-        //        Subject = new ClaimsIdentity(new Claim[]
-        //        {
-        //            new Claim(ClaimTypes.Name, user.Id.ToString())
-        //        }),
-        //        Expires = DateTime.UtcNow.AddDays(7),
-        //        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
-        //    };
+        private string GenerateJwtToken(string username)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey"));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        //    var token = tokenHandler.CreateToken(tokenDescriptor);
-        //    return tokenHandler.WriteToken(token);
-        //}
+            var claims = new[]
+            {
+            new Claim(JwtRegisteredClaimNames.Sub, username),
+            // Aggiungi altri claims necessari
+        };
+
+            var token = new JwtSecurityToken(
+                // claims: claims, // Abilita questo se hai altri claims da aggiungere
+                expires: DateTime.Now.AddDays(1),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }
