@@ -50,20 +50,20 @@ namespace Middleware.Lesson.Models
             return Ok(token);
         }
 
-        [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDto userDto)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
+        //  [HttpPost("login")]
+        //public async Task<ActionResult<string>> Login(UserDto userDto)
+        //{
+        //    var user = await _context.Users
+        //        .FirstOrDefaultAsync(u => u.Username == userDto.Username);
 
-            if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
-            {
-                return Unauthorized("Username or password is incorrect.");
-            }
+        //    if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
+        //    {
+        //        return Unauthorized("Username or password is incorrect.");
+        //    }
 
-            string token = GenerateJwtToken(user);
-            return Ok(token);
-        }
+        //    string token = GenerateJwtToken(user);
+        //    return Ok(token);
+        //}
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {

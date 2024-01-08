@@ -8,7 +8,7 @@ namespace MyFakeClient
 {
     internal class Program
     {
-        private static string _token; // Variabile per salvare il token
+        private static string _token; // Simulate cache 
 
         static async Task Main(string[] args)
         {
