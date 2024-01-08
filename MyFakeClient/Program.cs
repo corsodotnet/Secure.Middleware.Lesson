@@ -13,7 +13,7 @@ namespace MyFakeClient
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Starting client...");
+            Console.WriteLine("Starting Request without Login...");
             try
             {
                 await GetSecureData();

@@ -70,10 +70,11 @@ namespace Middleware.Lesson.Models
                 return Unauthorized("Username or password is incorrect.");
             }
 
+            // Informaizioni da inseri nella Session 
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Username)
-        };
+                {
+                    new Claim(ClaimTypes.Name, user.Username)
+                };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
