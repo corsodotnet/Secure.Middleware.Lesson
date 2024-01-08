@@ -75,87 +75,64 @@ namespace Middleware.Lesson
 
         }
     }
-    public class MyMiddleware
-    {
-        private readonly RequestDelegate _next;
 
-        public MyMiddleware(RequestDelegate next)
+}
+public class AuthenticationMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public AuthenticationMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+    public class Credentials
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+    public async Task InvokeAsync(HttpContext context)
+    {
+        // Leggi il body della richiesta
+        string body;
+        context.Request.EnableBuffering(); // Abilita la lettura del body più volte
+        using (var reader = new StreamReader(context.Request.Body))
         {
-            _next = next;
+            body = await reader.ReadToEndAsync();
+            context.Request.Body.Position = 0; // Resetta la posizione del body per le letture successive
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        // Deserializza il body nella classe Credentials
+        Credentials credentials = null;
+        try
         {
-            // Logica del middleware prima di passare alla prossima componente
+            credentials = JsonSerializer.Deserialize<Credentials>(body);
+        }
+        catch (JsonException exx) // Gestisci errori di deserializzazione
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            await context.Response.WriteAsync("Body della richiesta non valido.");
+            return;
+        }
 
-            await context.Response.WriteAsync("MyMiddleware - MyMiddleware - Andata \n");
-
-
-            // Passa al prossimo middleware nella pipeline 
-
-            await _next(context);
-            await context.Response.WriteAsync("MyMiddleware - MyMiddleware - Ritorno \n");
-
-            // Logica da eseguire dopo che il prossimo middleware ha terminato
-            // ...
+        // Verifica le credenziali
+        if (credentials != null && IsValidUser(credentials))
+        {
+            await _next(context); // Continua con la pipeline se l'utente è valido  
+            await context.Response.WriteAsync("Accesso Concesso!");
+        }
+        else
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            await context.Response.WriteAsync("Accesso Negato");
         }
     }
-    public class AuthenticationMiddleware
+
+    private bool IsValidUser(Credentials credentials)
     {
-        private readonly RequestDelegate _next;
-
-        public AuthenticationMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-        public class Credentials
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-        }
-        public async Task InvokeAsync(HttpContext context)
-        {
-            // Leggi il body della richiesta
-            string body;
-            context.Request.EnableBuffering(); // Abilita la lettura del body più volte
-            using (var reader = new StreamReader(context.Request.Body))
-            {
-                body = await reader.ReadToEndAsync();
-                context.Request.Body.Position = 0; // Resetta la posizione del body per le letture successive
-            }
-
-            // Deserializza il body nella classe Credentials
-            Credentials credentials = null;
-            try
-            {
-                credentials = JsonSerializer.Deserialize<Credentials>(body);
-            }
-            catch (JsonException exx) // Gestisci errori di deserializzazione
-            {
-                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                await context.Response.WriteAsync("Body della richiesta non valido.");
-                return;
-            }
-
-            // Verifica le credenziali
-            if (credentials != null && IsValidUser(credentials))
-            {
-                await _next(context); // Continua con la pipeline se l'utente è valido  
-                await context.Response.WriteAsync("Accesso Concesso!");
-            }
-            else
-            {
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                await context.Response.WriteAsync("Accesso Negato");
-            }
-        }
-
-        private bool IsValidUser(Credentials credentials)
-        {
-            // Implementa la logica di verifica dell'utente
-            return credentials.Username == "bruno" && credentials.Password == "myPassword";
-        }
+        // Implementa la logica di verifica dell'utente
+        return credentials.Username == "bruno" && credentials.Password == "myPassword";
     }
+}
 
 
 }
