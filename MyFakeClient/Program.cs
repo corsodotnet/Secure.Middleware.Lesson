@@ -59,7 +59,7 @@ namespace MyFakeClient
             // Salva il cookie per le successive richieste
             if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
             {
-                client.DefaultRequestHeaders.Add("Cookie", string.Join(";", cookies));
+                client.DefaultRequestHeaders.Add("Cookie", string.Join(";", cookies));//Browser
             }
 
             Console.WriteLine("Login: " + result);
