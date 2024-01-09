@@ -32,7 +32,7 @@ namespace Middleware.Lesson
             // Configura il database in-memory
             services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(databaseName: "UserDatabase"));
 
-            // Configura l'autenticazione JWT
+            #region Configura l'autenticazione JWT
             services.AddAuthentication(options =>
             {
                 //Questo imposta lo schema di autenticazione predefinito per l'applicazione. Assegnando stai dicendo all'applicazione di utilizzare l'autenticazione JWT come meccanismo di autenticazione principale. Questo significa che, quando una richiesta arriva al server, il middleware di autenticazione proverà a convalidare il token JWT incluso nell'intestazione della richiesta.
@@ -50,20 +50,23 @@ namespace Middleware.Lesson
                     //Questo è un passaggio cruciale per garantire che il token sia stato emesso da una fonte attendibile e non sia stato manomesso.
                     ValidateIssuerSigningKey = true,
 
+
                     //Qui si specifica la chiave utilizzata per la validazione della firma del token.
                     //Questa chiave deve corrispondere a quella usata per firmare il token.
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey")),
 
+
+                    //Questa impostazione determina se il middleware deve validare il campo iss (issuer, cioè l'emittente) del token JWT.
                     //Impostando questo valore su false, si specifica che il middleware non deve validare l'emittente del token.
                     //In alcuni casi, potresti volerlo validare per assicurarti che il token provenga da una fonte attendibile.
                     ValidateIssuer = false,
 
-                    //Analogamente a ValidateIssuer, impostare questo valore su false indica che il middleware non deve
-                    //validare l'audience (destinatario) del token. Anche questo può essere importante in scenari in cui devi assicurarti
-                    //che il token sia destinato alla tua applicazione o a un particolare ascoltatore.
+                    // Indica che il middleware non controllerà se il token è destinato specificamente all'applicazione in questione.
+                    //Questo può essere appropriato in ambienti in cui il token è condiviso tra più applicazioni o servizi.
                     ValidateAudience = false
                 };
             });
+            #endregion         
 
             services.AddControllers();
         }
