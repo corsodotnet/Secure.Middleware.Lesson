@@ -26,11 +26,14 @@ namespace Middleware.Lesson.Models
         [HttpPost("getToken")]
         public async Task<ActionResult<User>> getToken(UserDto userDto)
         {
+            string token;
             // Verify if the username already exists
-            var userExists = await _context.Users.AnyAsync(u => u.Username == userDto.Username);
-            if (userExists)
+            var userExists = await _context.Users.FirstOrDefaultAsync(u => u.Username == userDto.Username);
+            if (userExists is not null)
             {
-                return BadRequest("Username already exists.");
+                token = GenerateJwtToken(userExists);
+                return Ok(token);
+                // return BadRequest("Username already exists.");
             }
 
             var user = new User
@@ -43,13 +46,9 @@ namespace Middleware.Lesson.Models
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            string token = GenerateJwtToken(user);
+            token = GenerateJwtToken(user);
             return Ok(token);
         }
-
-
-
-
         private string GenerateJwtToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -59,9 +58,9 @@ namespace Middleware.Lesson.Models
 
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
+                    new Claim(ClaimTypes.Name, user.Username.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Expires = DateTime.UtcNow.AddMinutes(7),
 
                 // SigningCredentials: Questa è una classe nel namespace Microsoft.IdentityModel.Tokens.Viene utilizzata per definire la chiave crittografica e l'algoritmo di sicurezza che saranno usati per generare la firma del JWT.
                 // SecurityAlgorithms.HmacSha512Signature: Questo specifica l'algoritmo utilizzato per generare la firma. HMAC SHA-512 è una funzione hash crittografica che garantisce l'integrità e l'autenticità del token. Utilizzare HMAC SHA-512 significa che la parte della firma del JWT viene generata utilizzando questo algoritmo, noto per la sua forza crittografica.

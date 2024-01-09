@@ -33,14 +33,23 @@ namespace Middleware.Lesson
             services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(databaseName: "UserDatabase"));
 
             #region Configura l'autenticazione JWT
+
+
             services.AddAuthentication(options =>
             {
-                //Questo imposta lo schema di autenticazione predefinito per l'applicazione. Assegnando stai dicendo all'applicazione di utilizzare l'autenticazione JWT come meccanismo di autenticazione principale. Questo significa che, quando una richiesta arriva al server, il middleware di autenticazione proverà a convalidare il token JWT incluso nell'intestazione della richiesta.
+                //Questo imposta lo schema di autenticazione predefinito per l'applicazione.
+                //Assegnando stai dicendo all'applicazione di utilizzare l'autenticazione JWT come meccanismo di autenticazione principale.
+                //Questo significa che, quando una richiesta arriva al server, il middleware di autenticazione proverà a convalidare
+                //il token JWT incluso nell'intestazione della richiesta.
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 
-                //Questo imposta lo schema predefinito per le sfide di autenticazione. Quando un'azione richiede autenticazione e non è presente alcun token valido o l'autenticazione fallisce, il middleware genera una "sfida".
-                //Impostando JwtBearerDefaults.AuthenticationScheme come schema di sfida predefinito, indichi che il middleware dovrà rispondere alle richieste non autenticate chiedendo un token JWT.
+                //Questo imposta lo schema predefinito per le sfide di autenticazione.
+                //Quando un'azione richiede autenticazione e non è presente alcun token valido o l'autenticazione fallisce,
+                //il middleware genera una "sfida".
+                //Impostando JwtBearerDefaults.AuthenticationScheme come schema di sfida predefinito,
+                //indichi che il middleware dovrà rispondere alle richieste non autenticate chiedendo un token JWT.
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
             })
             .AddJwtBearer(options =>
             {
@@ -66,6 +75,8 @@ namespace Middleware.Lesson
                     ValidateAudience = false
                 };
             });
+
+
             #endregion         
 
             services.AddControllers();
@@ -80,11 +91,12 @@ namespace Middleware.Lesson
             }
 
             app.UseRouting();
-            app.UseMiddleware<AuthenticationMiddleware>();
+
+            //   app.UseMiddleware<AuthenticationMiddleware>();
 
             #region  Authc/Autrz
-            //app.UseAuthentication();
-            //app.UseAuthorization();
+            app.UseAuthentication();
+            app.UseAuthorization();
             #endregion
 
             app.UseEndpoints(endpoints =>

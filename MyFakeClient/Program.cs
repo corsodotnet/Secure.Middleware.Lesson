@@ -12,13 +12,21 @@ namespace MyFakeClient
 
         static async Task Main(string[] args)
         {
-            // Registrazione PER OTTENERE IL TOKER 
+            // Pre- Registrazione PER OTTENERE IL TOKER 
 
-            await GetToken("https://localhost:5001/api/auth/getToken", new
-            {
-                Username = "nuovoUtente",
-                Password = "nuovaPassword"
-            });
+            //await GetToken("https://localhost:5001/api/auth/getToken", new
+            //{
+            //    Username = "nuovoUtente",
+            //    Password = "nuovaPassword"
+            //});
+
+            ////Post  - Registrazione
+            //await GetToken("https://localhost:5001/api/auth/getToken", new
+            //{
+            //    Username = "nuovoUtente",
+            //    Password = "nuovaPassword"
+            //});
+
 
             // Utilizzo del token per una richiesta a un endpoint protetto
             await SendGetWithToken("https://localhost:5001/WeatherForecast");
