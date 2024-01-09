@@ -133,7 +133,7 @@ namespace Middleware.Lesson.Models
                 {
                     new Claim(ClaimTypes.Email, user.Email.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(1),
+                // Expires = DateTime.UtcNow.AddMinutes(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
             };
 
