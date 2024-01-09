@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -91,10 +92,19 @@ namespace Middleware.Lesson.Models
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
-
-            // Genera e restituisci un token JWT per l'utente
             var token = GenerateJwtToken(user);
-            return Ok(new { token });
+
+            // Imposta il token JWT in un cookie di sessione
+            var cookieOptions = new CookieOptions
+            {
+                Expires = DateTime.UtcNow.AddMinutes(1),
+                HttpOnly = true,
+                Secure = true, // Assicurati di usare HTTPS
+                               // Non impostare Expires per il cookie di sessione
+            };
+            Response.Cookies.Append("AuthToken", token, cookieOptions);
+
+            return Ok(); // Puoi 
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -121,9 +131,9 @@ namespace Middleware.Lesson.Models
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
+                    new Claim(ClaimTypes.Email, user.Email.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Expires = DateTime.UtcNow.AddMinutes(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
             };
 
