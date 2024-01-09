@@ -46,16 +46,21 @@ namespace Middleware.Lesson
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    //Impostando questo valore su true, indichi che il middleware deve validare la chiave usata per firmare il token JWT in arrivo. Questo è un passaggio cruciale per garantire che il token sia stato emesso da una fonte attendibile e non sia stato manomesso.
+                    //Impostando questo valore su true, indichi che il middleware deve validare la chiave usata per firmare il token JWT in arrivo.
+                    //Questo è un passaggio cruciale per garantire che il token sia stato emesso da una fonte attendibile e non sia stato manomesso.
                     ValidateIssuerSigningKey = true,
 
-                    //Qui si specifica la chiave utilizzata per la validazione della firma del token. Questa chiave deve corrispondere a quella usata per firmare il token. Nel tuo codice, viene creata una nuova 
+                    //Qui si specifica la chiave utilizzata per la validazione della firma del token.
+                    //Questa chiave deve corrispondere a quella usata per firmare il token.
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("CreateSomeRandomStringForSecretKey")),
 
-                    //Impostando questo valore su false, si specifica che il middleware non deve validare l'emittente del token. In alcuni casi, potresti volerlo validare per assicurarti che il token provenga da una fonte attendibile.
+                    //Impostando questo valore su false, si specifica che il middleware non deve validare l'emittente del token.
+                    //In alcuni casi, potresti volerlo validare per assicurarti che il token provenga da una fonte attendibile.
                     ValidateIssuer = false,
 
-                    //Analogamente a ValidateIssuer, impostare questo valore su false indica che il middleware non deve validare l'audience (destinatario) del token. Anche questo può essere importante in scenari in cui devi assicurarti che il token sia destinato alla tua applicazione o a un particolare ascoltatore.
+                    //Analogamente a ValidateIssuer, impostare questo valore su false indica che il middleware non deve
+                    //validare l'audience (destinatario) del token. Anche questo può essere importante in scenari in cui devi assicurarti
+                    //che il token sia destinato alla tua applicazione o a un particolare ascoltatore.
                     ValidateAudience = false
                 };
             });
@@ -72,6 +77,7 @@ namespace Middleware.Lesson
             }
 
             app.UseRouting();
+            app.UseMiddleware<AuthenticationMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -91,12 +97,14 @@ namespace Middleware.Lesson
 public class AuthenticationMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly AppDbContext _appDbContext;
 
-    public AuthenticationMiddleware(RequestDelegate next)
+    public AuthenticationMiddleware(RequestDelegate next, AppDbContext appDbContext)
     {
         _next = next;
+        _appDbContext = appDbContext;
     }
-    public class Credentials
+    public class CredentialsDto
     {
         public string Username { get; set; }
         public string Password { get; set; }
@@ -113,10 +121,10 @@ public class AuthenticationMiddleware
         }
 
         // Deserializza il body nella classe Credentials
-        Credentials credentials = null;
+        CredentialsDto credentials = null;
         try
         {
-            credentials = JsonSerializer.Deserialize<Credentials>(body);
+            credentials = JsonSerializer.Deserialize<CredentialsDto>(body);
         }
         catch (JsonException exx) // Gestisci errori di deserializzazione
         {
@@ -138,7 +146,7 @@ public class AuthenticationMiddleware
         }
     }
 
-    private bool IsValidUser(Credentials credentials)
+    private bool IsValidUser(CredentialsDto credentials)
     {
         // Implementa la logica di verifica dell'utente
         return credentials.Username == "bruno" && credentials.Password == "myPassword";
