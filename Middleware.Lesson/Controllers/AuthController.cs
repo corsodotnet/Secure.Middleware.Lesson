@@ -24,46 +24,58 @@ namespace Middleware.Lesson.Models
             _configuration = configuration;
         }
 
-        [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto userDto)
+        [HttpPost("getToken")]
+        public async Task<ActionResult<User>> getToken(UserDto userDto)
         {
             // Verify if the username already exists
             var userExists = await _context.Users.AnyAsync(u => u.Username == userDto.Username);
             if (userExists)
             {
-                return BadRequest("Username already exists.");
+                var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
+
+                if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
+                {
+                    return Unauthorized("Username or password is incorrect.");
+                }
+
+                string token = GenerateJwtToken(user);
+                return Ok(token);
             }
-
-            CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
-
-            var user = new User
+            else
             {
-                Username = userDto.Username,
-                PasswordHash = passwordHash, // Store the hash
-                PasswordSalt = passwordSalt  // Store the salt
-            };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
+
+                var user = new User
+                {
+                    Username = userDto.Username,
+                    PasswordHash = passwordHash, // Store the hash
+                    PasswordSalt = passwordSalt  // Store the salt
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                string token = GenerateJwtToken(user);
+                return Ok(token);
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login(UserDto userDto)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
+
+            if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
+            {
+                return Unauthorized("Username or password is incorrect.");
+            }
 
             string token = GenerateJwtToken(user);
             return Ok(token);
         }
-
-        //  [HttpPost("login")]
-        //public async Task<ActionResult<string>> Login(UserDto userDto)
-        //{
-        //    var user = await _context.Users
-        //        .FirstOrDefaultAsync(u => u.Username == userDto.Username);
-
-        //    if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
-        //    {
-        //        return Unauthorized("Username or password is incorrect.");
-        //    }
-
-        //    string token = GenerateJwtToken(user);
-        //    return Ok(token);
-        //}
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {

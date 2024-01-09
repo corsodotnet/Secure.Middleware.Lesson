@@ -13,7 +13,14 @@ namespace MyFakeClient
         static async Task Main(string[] args)
         {
             // Registrazione
-            await SendPost("https://localhost:5001/api/auth/register", new
+            await getToken("https://localhost:5001/api/auth/getToken", new
+            {
+                Username = "nuovoUtente",
+                Password = "nuovaPassword"
+            });
+
+            // get Token as Registred user 
+            await getToken("https://localhost:5001/api/auth/getToken", new
             {
                 Username = "nuovoUtente",
                 Password = "nuovaPassword"
@@ -21,9 +28,12 @@ namespace MyFakeClient
 
             // Utilizzo del token per una richiesta a un endpoint protetto
             await SendGetWithToken("https://localhost:5001/WeatherForecast");
+
+
+
         }
 
-        public static async Task SendPost(string url, object credentials)
+        public static async Task getToken(string url, object credentials)
         {
             using (HttpClient client = new HttpClient())
             {
