@@ -80,12 +80,12 @@ namespace Middleware.Lesson
             }
 
             app.UseRouting();
-            //  app.UseMiddleware<AuthenticationMiddleware>();
+            app.UseMiddleware<AuthenticationMiddleware>();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-
+            #region  Authc/Autrz
+            //app.UseAuthentication();
+            //app.UseAuthorization();
+            #endregion
 
             app.UseEndpoints(endpoints =>
             {
