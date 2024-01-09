@@ -44,8 +44,8 @@ namespace Middleware.Lesson
 
            .AddCookie(options =>
            {
-               options.LoginPath = "/login"; // Imposta il tuo path di login
-               options.LogoutPath = "/logout"; // Imposta il tuo path di logout
+               options.LoginPath = "/login"; // Imposta il tuo path di login. Di solito utilizzato lato Client.  Nelle Api non ha molto senso. 
+               options.LogoutPath = "/logout"; // Imposta il tuo path di logout (Qui si puo revocare la Sezione Utente dal Broswer.  Ovviamente va configuration un Endpoinit nel Controller di Autenticazione che elimini i cookies dal browser )
                options.Cookie.HttpOnly = true;  // Per la sicurezza
            });
 
