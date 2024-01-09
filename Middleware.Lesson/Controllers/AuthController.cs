@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,13 +33,11 @@ namespace Middleware.Lesson.Models
                 return BadRequest("Username already exists.");
             }
 
-            CreatePasswordHash(userDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
-
             var user = new User
             {
                 Username = userDto.Username,
-                PasswordHash = passwordHash, // Store the hash
-                PasswordSalt = passwordSalt  // Store the salt
+                Password = userDto.Password, // Store the hash
+
             };
 
             _context.Users.Add(user);
@@ -50,38 +47,21 @@ namespace Middleware.Lesson.Models
             return Ok(token);
         }
 
-        //  [HttpPost("login")]
-        //public async Task<ActionResult<string>> Login(UserDto userDto)
-        //{
-        //    var user = await _context.Users
-        //        .FirstOrDefaultAsync(u => u.Username == userDto.Username);
-
-        //    if (user == null || !VerifyPasswordHash(userDto.Password, user.PasswordHash, user.PasswordSalt))
-        //    {
-        //        return Unauthorized("Username or password is incorrect.");
-        //    }
-
-        //    string token = GenerateJwtToken(user);
-        //    return Ok(token);
-        //}
-
-        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login(UserDto userDto)
         {
-            using (var hmac = new System.Security.Cryptography.HMACSHA512())
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
+
+            if (user == null)
             {
-                passwordSalt = hmac.Key; // Save the generated salt
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return Unauthorized("Username or password is incorrect.");
             }
+
+            string token = GenerateJwtToken(user);
+            return Ok(token);
         }
 
-        private bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
-        {
-            using var hmac = new System.Security.Cryptography.HMACSHA512(storedSalt); // Use the stored salt
-
-
-            var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            return computedHash.SequenceEqual(storedHash); // Compare the computed hash with the stored hash
-        }
 
         private string GenerateJwtToken(User user)
         {
