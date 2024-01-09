@@ -23,8 +23,8 @@ namespace Middleware.Lesson.Models
             _configuration = configuration;
         }
 
-        [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto userDto)
+        [HttpPost("getToken")]
+        public async Task<ActionResult<User>> getToken(UserDto userDto)
         {
             // Verify if the username already exists
             var userExists = await _context.Users.AnyAsync(u => u.Username == userDto.Username);
@@ -47,20 +47,7 @@ namespace Middleware.Lesson.Models
             return Ok(token);
         }
 
-        [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDto userDto)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == userDto.Username);
 
-            if (user == null)
-            {
-                return Unauthorized("Username or password is incorrect.");
-            }
-
-            string token = GenerateJwtToken(user);
-            return Ok(token);
-        }
 
 
         private string GenerateJwtToken(User user)

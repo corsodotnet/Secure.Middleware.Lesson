@@ -77,7 +77,7 @@ namespace Middleware.Lesson
             }
 
             app.UseRouting();
-            app.UseMiddleware<AuthenticationMiddleware>();
+            //  app.UseMiddleware<AuthenticationMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -97,12 +97,12 @@ namespace Middleware.Lesson
 public class AuthenticationMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly AppDbContext _appDbContext;
 
-    public AuthenticationMiddleware(RequestDelegate next, AppDbContext appDbContext)
+
+    public AuthenticationMiddleware(RequestDelegate next)
     {
         _next = next;
-        _appDbContext = appDbContext;
+
     }
     public class CredentialsDto
     {

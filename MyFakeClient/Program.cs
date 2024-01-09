@@ -12,8 +12,9 @@ namespace MyFakeClient
 
         static async Task Main(string[] args)
         {
-            // Registrazione
-            await SendPost("https://localhost:5001/api/auth/register", new
+            // Registrazione PER OTTENERE IL TOKER 
+
+            await GetToken("https://localhost:5001/api/auth/getToken", new
             {
                 Username = "nuovoUtente",
                 Password = "nuovaPassword"
@@ -23,7 +24,7 @@ namespace MyFakeClient
             await SendGetWithToken("https://localhost:5001/WeatherForecast");
         }
 
-        public static async Task SendPost(string url, object credentials)
+        public static async Task GetToken(string url, object credentials)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -57,10 +58,12 @@ namespace MyFakeClient
             {
                 try
                 {
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+                    client.DefaultRequestHeaders.Authorization =
+                              new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);// Bearer viene utilizzato per inviare i JWT
                     HttpResponseMessage response = await client.GetAsync(url);
                     string result = await response.Content.ReadAsStringAsync();
                     Console.WriteLine("Risposta ricevuta: " + result);
+                    Console.WriteLine("Risposta ricevuta: " + response.StatusCode);
                 }
                 catch (HttpRequestException e)
                 {
